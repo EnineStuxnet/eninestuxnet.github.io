@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Container Load Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js" integrity="sha512-Y51n9mtKTVBh3Jbx5pZSJNDDMyY+yGe77DGtBPzRlgsf/YLCh13kSZ3JmfHGzYFCmOndraf0sQgfM654b7dJ3w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --bg: #0b1220;
+    --panel: #111b2c;
+    --panel-2: #0e1726;
+    --line: #21304a;
+    --text: #e7edf5;
+    --muted: #8a99b3;
+    --fluid: #34d1c4;
+    --amber: #ffb454;
+    --danger: #e97a7a;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html, body{
+    height:100%;
+    margin:0;
+    overflow:hidden; /* the app fills the viewport — no page-level scroll */
+  }
+  body{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(52,209,196,0.08), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(255,180,84,0.06), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    display:grid;
+    grid-template-columns: 300px 1fr;
+    height:100vh;
+    overflow:hidden;
+  }
+  @media (max-width: 860px){
+    html, body{ overflow:auto; }
+    .app{ grid-template-columns: 1fr; height:auto; min-height:100vh; }
+    .sidebar{ order:2; height:auto; max-height:46vh; }
+    .main{ order:1; height:auto; }
+    .chart-panel{ min-height:420px; }
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    background:var(--panel-2);
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    min-height:0;
+    overflow:hidden;
+  }
+  .brand{
+    padding:16px 18px 12px;
+    border-bottom:1px solid var(--line);
+    flex:0 0 auto;
+  }
+  .brand .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--fluid);
+  }
+  .brand h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:18px;
+    margin:5px 0 0;
+    line-height:1.25;
+  }
+
+  .search-wrap{ padding:12px 16px 6px; flex:0 0 auto; }
+  .search-wrap input{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:8px;
+    padding:8px 11px;
+    font-size:13px;
+    font-family:'Inter', sans-serif;
+    outline:none;
+  }
+  .search-wrap input:focus{border-color:var(--fluid);}
+  .search-wrap input::placeholder{color:var(--muted);}
+
+  .toolbar{
+    display:flex; gap:8px;
+    padding:2px 16px 10px;
+    flex:0 0 auto;
+  }
+  .toolbar button{
+    flex:1;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--muted);
+    border-radius:7px;
+    padding:6px 8px;
+    font-size:11.5px;
+    font-family:'Inter', sans-serif;
+    cursor:pointer;
+  }
+  .toolbar button:hover{border-color:var(--fluid); color:var(--fluid);}
+
+  .list{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    padding:4px 10px 12px;
+  }
+  .item{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    width:100%;
+    background:transparent;
+    border:1px solid transparent;
+    border-radius:8px;
+    padding:6px 8px;
+    margin-bottom:3px;
+    cursor:pointer;
+    text-align:left;
+    color:var(--text);
+    transition:background .12s ease, border-color .12s ease;
+  }
+  .item .swatch{
+    width:8px; height:8px; border-radius:50%;
+    flex:0 0 auto;
+  }
+  .item img{
+    image-rendering: pixelated;
+    height: 24px;
+    max-width: 24px;
+    width: auto;
+    /* width:24px; height:24px; */
+    border-radius:6px;
+    flex:0 0 auto;
+    background:var(--panel);
+  }
+  .item .meta{ display:flex; flex-direction:column; min-width:0; flex:1; }
+  .item .name{
+    font-size:12.5px; font-weight:500;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .item .stats{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px; color:var(--muted);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .item .stats .clip-flag{ color:var(--amber); }
+  .item:hover{ background:rgba(255,255,255,0.04); }
+  .item.hovered{ background:rgba(52,209,196,0.10); border-color:rgba(52,209,196,0.35); }
+  .item.selected{ background:rgba(255,180,84,0.10); border-color:rgba(255,180,84,0.45); }
+  .empty-note{ color:var(--muted); font-size:12px; padding:12px 10px; line-height:1.5; }
+
+  /* ---------- Main ---------- */
+  .main{
+    display:flex; flex-direction:column;
+    height:100vh;
+    min-height:0;
+    padding:18px 22px 18px;
+    overflow:hidden;
+  }
+  .headline{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+    flex:0 0 auto;
+  }
+  .headline h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:19px; margin:0 0 4px;
+  }
+  .headline p{
+    margin:0; color:var(--muted); font-size:12.5px; max-width:60ch; line-height:1.45;
+  }
+  .headline code{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--fluid);
+    background:rgba(52,209,196,0.08);
+    padding:1px 5px; border-radius:4px;
+  }
+
+  .chart-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 16px 8px;
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:hidden;
+  }
+  .chart-canvas-wrap{
+    position:relative;
+    flex:1;
+    min-height:0;
+  }
+  canvas{ width:100% !important; height:100% !important; display:block; }
+
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(6,10,18,0.72);
+    display:none;
+    align-items:center; justify-content:center;
+    z-index:50;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    width:min(560px, 90vw);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .modal h3{
+    margin:0;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+  }
+  .modal p{
+    margin:0;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.5;
+  }
+  .modal textarea{
+    width:100%;
+    height:220px;
+    resize:vertical;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:8px;
+    padding:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    outline:none;
+  }
+  .modal textarea:focus{ border-color:var(--fluid); }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; }
+
+  .hover-tip{
+    position:absolute;
+    pointer-events:none;
+    background:#0c1524;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:11.5px;
+    line-height:1.5;
+    color:var(--text);
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    z-index:30;
+    display:none;
+    max-width:220px;
+  }
+  .hover-tip .row{ display:flex; gap:6px; align-items:center; white-space:nowrap; }
+  .hover-tip .dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+  .hover-tip .row + .row{ margin-top:3px; }
+  .hover-tip .val{ font-family:'JetBrains Mono', monospace; color:var(--muted); margin-left:auto; }
+  .hover-tip .clip-flag{ color:var(--amber); font-size:10px; }
+
+  .legend-foot{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 4px 2px;
+    color:var(--muted);
+    font-size:10.5px;
+    font-family:'JetBrains Mono', monospace;
+    flex:0 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="eyebrow">Fluid &amp; Container Reference</div>
+      <h1>Container Load Chart</h1>
+    </div>
+
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Filter containers…">
+    </div>
+    <div class="toolbar">
+      <button id="clear-selection">Clear selection</button>
+    </div>
+
+    <div class="list" id="list">
+      <div class="empty-note">Load a CSV to see containers here.</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="headline">
+      <div>
+        <h2>Weight by fill level</h2>
+        <p>
+          Weight is set by the <code>container</code>, not the fluid — every line runs from
+          <code>0.1u</code> empty up toward its full weight at capacity, and stops there. The chart
+          tops out at <code>1.7u</code>; a few containers are heavier than that, so their line is
+          dashed and cut off where it would cross the ceiling. Click a container to pin its line, or
+          hover the chart to see what's under the cursor.
+        </p>
+      </div>
+      <div class="drop-controls" style="display: none;">
+        <input id="csv-url" type="text" placeholder="CSV URL…">
+        <button class="file-btn" id="load-url">Load</button>
+        <button class="file-btn secondary" id="paste-toggle">Paste data…</button>
+        <span id="status">no data loaded</span>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <div class="chart-canvas-wrap">
+        <canvas id="chart"></canvas>
+        <div class="hover-tip" id="hover-tip"></div>
+      </div>
+      <div class="legend-foot">
+        <span id="count-hint">0 containers loaded</span>
+        <span class="hint">x: fluid volume (mL) · y: weight (u) · dashed = full weight exceeds chart scale</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="paste-overlay">
+  <div class="modal">
+    <h3>Paste CSV data</h3>
+    <p>Paste raw CSV text (same columns: icon, name, capacity, weight) and load it directly — nothing is sent anywhere, it's parsed in the browser.</p>
+    <textarea id="paste-area" placeholder="icon,name,capacity_mL,full_weight_u&#10;..."></textarea>
+    <div class="modal-actions">
+      <button class="file-btn secondary" id="paste-cancel">Cancel</button>
+      <button class="file-btn" id="paste-load">Load pasted data</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------------------------------------------------------
+  // Embedded data (optional)
+  // ---------------------------------------------------------------
+  // To ship this page as a single self-contained file with no CSV loading at
+  // all, paste raw CSV text between the backticks below (same columns as
+  // always: icon, name, capacity, weight). When this is non-null it's used
+  // immediately on load and the URL/paste controls are hidden.
+  const EMBEDDED_CSV = null;
+  /* Example:
+  const EMBEDDED_CSV = `icon,name,capacity_mL,full_weight_u
+  ,Water bottle,500,1.25
+  ,Canteen,300,0.6`;
+  */
+
+  // ---------------------------------------------------------------
+  // Config
+  // ---------------------------------------------------------------
+  const HOVER_PX_RADIUS = 10;       // how close the cursor must be to a line, in pixels
+  const MIN_WEIGHT = 0.1;
+  const MAX_WEIGHT_DISPLAY = 1.7;   // fixed chart ceiling — heavier containers get clipped + dashed
+  const AXIS_HEADROOM = 1.05;       // a little breathing room above the ceiling / widest line
+
+  // ---------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------
+  let containers = [];     // [{id, name, capacity, trueWeight, displayCapacity, displayWeight, clipped, icon, color}]
+  let selected = new Set();
+  let hovered = new Set();
+  let chart = null;
+
+  const el = {
+    app: document.getElementById("app"),
+    list: document.getElementById("list"),
+    search: document.getElementById("search"),
+    status: document.getElementById("status"),
+    countHint: document.getElementById("count-hint"),
+    canvas: document.getElementById("chart"),
+    tip: document.getElementById("hover-tip"),
+    csvUrl: '/containers.csv',
+    loadUrl: document.getElementById("load-url"),
+    pasteToggle: document.getElementById("paste-toggle"),
+    pasteOverlay: document.getElementById("paste-overlay"),
+    pasteArea: document.getElementById("paste-area"),
+    pasteLoad: document.getElementById("paste-load"),
+    pasteCancel: document.getElementById("paste-cancel"),
+    clearSelection: document.getElementById("clear-selection"),
+  };
+
+  // ---------------------------------------------------------------
+  // Color assignment — evenly spaced hues so adjacent items in the
+  // list don't collide, distinct even when two lines overlap exactly.
+  // ---------------------------------------------------------------
+  function colorForIndex(i, total){
+    const hue = (i * (360 / Math.max(total, 1)) + (i * 47)) % 360;
+    return `hsl(${hue.toFixed(0)}, 70%, 62%)`;
+  }
+
+  // ---------------------------------------------------------------
+  // CSV loading / parsing
+  // ---------------------------------------------------------------
+  function normalizeHeaderKey(k){
+    return (k || "").toString().trim().toLowerCase();
+  }
+
+  function pickColumn(headers, candidates){
+    for(const cand of candidates){
+      const found = headers.find(h => normalizeHeaderKey(h).includes(cand));
+      if(found) return found;
+    }
+    return null;
+  }
+
+  function toIconSrc(raw){
+    if(!raw) return "";
+    const trimmed = raw.trim();
+    if(!trimmed) return "";
+    if(trimmed.startsWith("data:")) return trimmed;
+    return "data:image/png;base64," + trimmed;
+  }
+
+  function rowsToContainers(rows, headers){
+    const iconKey = pickColumn(headers, ["icon", "image", "base64"]);
+    const nameKey = pickColumn(headers, ["name", "container"]);
+    const capKey  = pickColumn(headers, ["capacity", "capa", "max"]);
+    const wtKey   = pickColumn(headers, ["weight", "full", "u)"]);
+
+    const list = [];
+    rows.forEach((row, i) => {
+      const name = (nameKey ? row[nameKey] : row[headers[1]] || "").toString().trim();
+      const capacity = parseFloat(capKey ? row[capKey] : row[headers[2]]);
+      const weight = parseFloat(wtKey ? row[wtKey] : row[headers[3]]);
+      const iconRaw = iconKey ? row[iconKey] : row[headers[0]];
+      // EDITED; when csv row starts with #, ignore
+      if(iconRaw[0]=='#' || !name || !isFinite(capacity) || !isFinite(weight) || capacity <= 0) return;
+
+      const trueWeight = Math.max(MIN_WEIGHT, weight);
+      const clipped = trueWeight > MAX_WEIGHT_DISPLAY;
+      // If the true weight exceeds the chart ceiling, find where the (0,0.1)->(capacity,weight)
+      // line would cross y = MAX_WEIGHT_DISPLAY, and only plot up to that point, dashed.
+      const displayWeight = clipped ? MAX_WEIGHT_DISPLAY : trueWeight;
+      const displayCapacity = clipped
+        ? capacity * (MAX_WEIGHT_DISPLAY - MIN_WEIGHT) / (trueWeight - MIN_WEIGHT)
+        : capacity;
+
+      list.push({
+        id: "c" + i,
+        name,
+        capacity,
+        trueWeight,
+        displayCapacity,
+        displayWeight,
+        clipped,
+        icon: toIconSrc(iconRaw),
+      });
+    });
+    return list;
+  }
+
+  function loadFromText(text, sourceLabel){
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+    if(!parsed.data.length){
+      setStatus("CSV had no rows", true);
+      return;
+    }
+    const headers = parsed.meta.fields || [];
+    const list = rowsToContainers(parsed.data, headers);
+    if(!list.length){
+      setStatus("couldn't find valid rows (need icon, name, capacity, weight)", true);
+      return;
+    }
+    list.sort((a, b) => a.name.localeCompare(b.name));
+    list.forEach((c, i) => { c.color = colorForIndex(i, list.length); });
+    containers = list;
+    selected = new Set();
+    hovered = new Set();
+    const clippedCount = list.filter(c => c.clipped).length;
+    setStatus(sourceLabel + " · " + list.length + " containers" + (clippedCount ? " · " + clippedCount + " clipped" : ""), false);
+    render();
+  }
+
+  function setStatus(msg, isError){
+    el.status.textContent = msg;
+    el.status.style.color = isError ? "var(--danger)" : "var(--muted)";
+  }
+
+  function loadFromUrl(url, opts){
+    opts = opts || {};
+    if(!url) return;
+    if(!opts.silent) setStatus("loading…", false);
+    fetch(url, { cache: "no-store" })
+      .then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(text => loadFromText(text, shortLabel(url)))
+      .catch(err => {
+        if(!opts.silent){
+          setStatus("couldn't load that URL (" + (err.message || "fetch failed") + ") — check it's public and CORS-enabled", true);
+        }
+      });
+  }
+
+  function shortLabel(url){
+    try {
+      const u = new URL(url, location.href);
+      const last = u.pathname.split("/").filter(Boolean).pop();
+      return last ? u.hostname + "/" + last : u.hostname;
+    } catch(e){
+      return url;
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Sidebar list
+  // ---------------------------------------------------------------
+  function render(){
+    renderList();
+    renderChart();
+    el.countHint.textContent = containers.length + " container" + (containers.length === 1 ? "" : "s") + " loaded";
+  }
+
+  function renderList(){
+    const query = el.search.value.trim().toLowerCase();
+    el.list.innerHTML = "";
+
+    if(!containers.length){
+      const note = document.createElement("div");
+      note.className = "empty-note";
+      note.textContent = "Load a CSV to see containers here.";
+      el.list.appendChild(note);
+      return;
+    }
+
+    const filtered = containers.filter(c => c.name.toLowerCase().includes(query));
+    if(!filtered.length){
+      const note = document.createElement("div");
+      note.className = "empty-note";
+      note.textContent = "No containers match \u201c" + el.search.value + "\u201d.";
+      el.list.appendChild(note);
+      return;
+    }
+
+    filtered.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "item" + (selected.has(c.id) ? " selected" : "") + (hovered.has(c.id) ? " hovered" : "");
+      btn.dataset.id = c.id;
+      const statsHtml = c.clipped
+        ? `${c.capacity} mL &middot; ${c.trueWeight.toFixed(2)}u full <span class="clip-flag">(capped at ${MAX_WEIGHT_DISPLAY}u)</span>`
+        : `${c.capacity} mL &middot; ${c.trueWeight.toFixed(2)}u full`;
+      btn.innerHTML = `
+        <span class="swatch" style="background:${c.color}"></span>
+        <img src="${c.icon}" alt="" onerror="this.style.visibility='hidden'">
+        <span class="meta">
+          <span class="name">${escapeHtml(c.name)}</span>
+          <span class="stats">${statsHtml}</span>
+        </span>
+      `;
+      btn.addEventListener("click", () => toggleSelect(c.id));
+      btn.addEventListener("mouseenter", () => setHover(new Set([c.id])));
+      btn.addEventListener("mouseleave", () => setHover(new Set()));
+      el.list.appendChild(btn);
+    });
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[m]));
+  }
+
+  function toggleSelect(id){
+    if(selected.has(id)) selected.delete(id);
+    else selected.add(id);
+    renderList();
+    styleDatasets();
+  }
+
+  el.clearSelection.addEventListener("click", () => {
+    selected = new Set();
+    renderList();
+    styleDatasets();
+  });
+
+  function setHover(idSet){
+    hovered = idSet;
+    renderList();
+    styleDatasets();
+  }
+
+  // ---------------------------------------------------------------
+  // Chart
+  // ---------------------------------------------------------------
+  function renderChart(){
+    const ctx = el.canvas.getContext("2d");
+
+    const maxCapacity = containers.length ? Math.max(...containers.map(c => c.displayCapacity)) : 1000;
+
+    const datasets = containers.map(c => ({
+      id: c.id,
+      label: c.name,
+      data: [{ x: 0, y: MIN_WEIGHT }, { x: c.displayCapacity, y: c.displayWeight }],
+      borderColor: c.color,
+      backgroundColor: c.color,
+      borderWidth: 2,
+      borderDash: c.clipped ? [6, 4] : [],
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      tension: 0,
+      spanGaps: false,
+    }));
+
+    if(chart){ chart.destroy(); }
+
+    chart = new Chart(ctx, {
+      type: "line",
+      data: { datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 200 },
+        interaction: { mode: "nearest", intersect: false },
+        parsing: false,
+        scales: {
+          x: {
+            type: "linear",
+            min: 0,
+            max: maxCapacity * 1.02,
+            title: { display: true, text: "Fluid volume (mL)", color: "#8a99b3", font: { family: "Inter", size: 12 } },
+            grid: { color: "#21304a" },
+            ticks: { color: "#8a99b3", font: { family: "JetBrains Mono", size: 10 } },
+          },
+          y: {
+            type: "linear",
+            min: 0,
+            max: MAX_WEIGHT_DISPLAY * AXIS_HEADROOM,
+            title: { display: true, text: "Weight (u)", color: "#8a99b3", font: { family: "Inter", size: 12 } },
+            grid: { color: "#21304a" },
+            ticks: { color: "#8a99b3", font: { family: "JetBrains Mono", size: 10 } },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }, // replaced with a custom multi-line-aware tooltip below
+        },
+      },
+    });
+
+    styleDatasets();
+    attachCanvasHover();
+  }
+
+  // Visually emphasize selected / hovered lines, dim the rest.
+  function styleDatasets(){
+    if(!chart) return;
+    const anySelected = selected.size > 0;
+    chart.data.datasets.forEach(ds => {
+      const isSelected = selected.has(ds.id);
+      const isHovered = hovered.has(ds.id);
+      let alpha = 1;
+      let width = 2;
+      if(anySelected){
+        alpha = isSelected ? 1 : 0.12;
+        width = isSelected ? 3.5 : 1.5;
+      }
+      if(isHovered){
+        alpha = 1;
+        width = 4;
+      }
+      ds.borderColor = withAlpha(ds.backgroundColor, alpha);
+      ds.borderWidth = width;
+      ds.order = isHovered ? -1 : (isSelected ? 0 : 1);
+    });
+    chart.update("none");
+  }
+
+  function withAlpha(hslColor, alpha){
+    // hslColor is "hsl(H, S%, L%)" -> convert to hsla
+    const m = hslColor.match(/hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/);
+    if(!m) return hslColor;
+    return `hsla(${m[1]}, ${m[2]}%, ${m[3]}%, ${alpha})`;
+  }
+
+  // ---------------------------------------------------------------
+  // Custom hover hit-testing (handles fully-overlapping lines)
+  // ---------------------------------------------------------------
+  let hoverAttached = false;
+  function attachCanvasHover(){
+    if(hoverAttached) return;
+    hoverAttached = true;
+
+    const handleMove = (clientX, clientY) => {
+      if(!chart || !containers.length) return;
+      const rect = el.canvas.getBoundingClientRect();
+      const mouseX = clientX - rect.left;
+      const mouseY = clientY - rect.top;
+      const xScale = chart.scales.x;
+      const yScale = chart.scales.y;
+
+      if(mouseX < xScale.left || mouseX > xScale.right || mouseY < yScale.top || mouseY > yScale.bottom){
+        clearHover();
+        return;
+      }
+
+      const dataX = xScale.getValueForPixel(mouseX);
+      const matches = [];
+
+      containers.forEach(c => {
+        const p0 = { x: 0, y: MIN_WEIGHT };
+        const p1 = { x: c.displayCapacity, y: c.displayWeight };
+        if(dataX < p0.x || dataX > p1.x) return;
+        const t = (dataX - p0.x) / (p1.x - p0.x || 1);
+        const yAtX = p0.y + t * (p1.y - p0.y);
+        const px = xScale.getPixelForValue(dataX);
+        const py = yScale.getPixelForValue(yAtX);
+        const dist = Math.hypot(mouseX - px, mouseY - py);
+        if(dist <= HOVER_PX_RADIUS){
+          matches.push({ id: c.id, name: c.name, color: c.color, volume: dataX, weight: yAtX, clipped: c.clipped });
+        }
+      });
+
+      if(!matches.length){
+        clearHover();
+        return;
+      }
+
+      hovered = new Set(matches.map(m => m.id));
+      renderList();
+      styleDatasets();
+      showTip(matches, mouseX, mouseY);
+    };
+
+    const clearHover = () => {
+      if(hovered.size === 0){ hideTip(); return; }
+      hovered = new Set();
+      renderList();
+      styleDatasets();
+      hideTip();
+    };
+
+    el.canvas.addEventListener("mousemove", e => handleMove(e.clientX, e.clientY));
+    el.canvas.addEventListener("mouseleave", clearHover);
+    el.canvas.addEventListener("touchmove", e => {
+      if(e.touches && e.touches[0]){
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault();
+      }
+    }, { passive: false });
+    el.canvas.addEventListener("touchend", clearHover);
+  }
+
+  function showTip(matches, mouseX, mouseY){
+    el.tip.innerHTML = matches
+      .slice(0, 6)
+      .map(m => `
+        <div class="row">
+          <span class="dot" style="background:${m.color}"></span>
+          <span>${escapeHtml(m.name)}${m.clipped ? ' <span class="clip-flag">(capped)</span>' : ''}</span>
+          <span class="val">${m.volume.toFixed(0)}mL / ${m.weight.toFixed(2)}u</span>
+        </div>
+      `).join("");
+    if(matches.length > 6){
+      el.tip.innerHTML += `<div class="row"><span class="val">+${matches.length - 6} more overlapping</span></div>`;
+    }
+    el.tip.style.display = "block";
+    const wrapRect = el.canvas.parentElement.getBoundingClientRect();
+    let left = mouseX + 14;
+    let top = mouseY + 14;
+    if(left + 230 > wrapRect.width) left = mouseX - 230;
+    if(top + (28 * matches.length + 20) > wrapRect.height) top = mouseY - (28 * matches.length + 20);
+    el.tip.style.left = Math.max(4, left) + "px";
+    el.tip.style.top = Math.max(4, top) + "px";
+  }
+
+  function hideTip(){
+    el.tip.style.display = "none";
+  }
+
+  // ---------------------------------------------------------------
+  // URL loading + paste-data modal
+  // ---------------------------------------------------------------
+
+  function openPasteModal(){
+    el.pasteOverlay.classList.add("open");
+    el.pasteArea.focus();
+  }
+  function closePasteModal(){
+    el.pasteOverlay.classList.remove("open");
+  }
+  el.pasteToggle.addEventListener("click", openPasteModal);
+  el.pasteCancel.addEventListener("click", closePasteModal);
+  el.pasteOverlay.addEventListener("click", e => { if(e.target === el.pasteOverlay) closePasteModal(); });
+  el.pasteLoad.addEventListener("click", () => {
+    const text = el.pasteArea.value.trim();
+    if(!text) return;
+    loadFromText(text, "pasted data");
+    closePasteModal();
+  });
+
+  el.search.addEventListener("input", renderList);
+
+  window.addEventListener("resize", () => { if(chart) chart.resize(); });
+
+  // ---------------------------------------------------------------
+  // Boot
+  // ---------------------------------------------------------------
+  function boot(){
+    renderChart();
+
+    if(EMBEDDED_CSV){
+      // Data is baked into the page — hide the loading controls, nothing to fetch.
+      el.csvUrl.style.display = "none";
+      el.loadUrl.style.display = "none";
+      el.pasteToggle.style.display = "none";
+      loadFromText(EMBEDDED_CSV, "embedded data");
+      return;
+    }
+
+    const csvParam = new URLSearchParams(location.search).get("csv");
+    if(csvParam){
+      el.csvUrl.value = csvParam;
+      loadFromUrl(csvParam);
+      return;
+    }
+
+    // Quiet best-effort: a containers.csv sitting next to this page, if served over http(s).
+    if(location.protocol !== "file:"){
+      loadFromUrl("containers.csv", { silent: true });
+    }
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
