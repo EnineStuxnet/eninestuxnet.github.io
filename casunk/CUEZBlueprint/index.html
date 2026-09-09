@@ -298,10 +298,10 @@
         <div id="step1selectone" class="optionButtons optionButtonsArticle" style="display: none;">
             <p>게임이 확인되었습니다.</p>
             <ul>
-                <li id="step1selectonerelease" style="display:none;" onclick="call('step1ApplyRelease')"><label class="ingamestyleborder thin" for="game-found-demo"><input type="radio" name="game-found" id="game-found-demo">정식판 사용</label></li>
-                <li id="step1selectonedemo" style="display:none;" onclick="call('step1ApplyDemo')"><label class="ingamestyleborder thin" for="game-found-release"><input type="radio" name="game-found" id="game-found-release">데모판 사용</label></li>
-                <li id="step1selectonebeta" style="display:none;" onclick="call('step1ApplyBeta')"><label class="ingamestyleborder thin" for="game-found-playtest"><input type="radio" name="game-found" id="game-found-playtest">테스트판 사용</label></li>
-                <li id="step1selectonemanual" style="display:none;" onclick="call('step1ApplyManual')"><label class="ingamestyleborder thin" for="game-found-manual"><input type="radio" name="game-found" id="game-found-manual">수동 위치 사용</label></li>
+                <li id="step1selectonerelease" onclick="call('step1ApplyRelease')"><label class="ingamestyleborder thin" for="game-found-demo"><input type="radio" name="game-found" id="game-found-demo">정식판 사용</label></li>
+                <li id="step1selectonedemo" onclick="call('step1ApplyDemo')"><label class="ingamestyleborder thin" for="game-found-release"><input type="radio" name="game-found" id="game-found-release">데모판 사용</label></li>
+                <li id="step1selectonebeta" onclick="call('step1ApplyBeta')"><label class="ingamestyleborder thin" for="game-found-playtest"><input type="radio" name="game-found" id="game-found-playtest">테스트판 사용</label></li>
+                <li id="step1selectonemanual" onclick="call('step1ApplyManual')"><label class="ingamestyleborder thin" for="game-found-manual"><input type="radio" name="game-found" id="game-found-manual">수동 위치 사용</label></li>
             </ul>
         </div>
         <div id="step1forcemanual" style="display: none;"><button class="ingamestyleborder thin" onclick="call('step1OpenExeManual')">게임 설치 위치 수동 입력하기</button></div>
