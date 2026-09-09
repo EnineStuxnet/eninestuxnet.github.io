@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<!-- <html lang="ko" style="-webkit-user-select:none;user-select:none;" unselectable="on" onselectstart="return false;"  onmousedown="return false;"> -->
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>CasUnkEasy</title>
+    <!--fonts-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style id="fonts">
+        @font-face {
+            font-family: 'NeoDonggeunmo';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.3/NeoDunggeunmo.woff') format('woff');
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    </style>
+    <style>
+        * {
+            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAHpJREFUOI3F1DEOgCAQBdHBmJBAuP89qOm4BZfB6hdSaERWp6LafdkC13vvLGxbOQxg1yOlNDUgxghArRVMhU8bZYDDVKiNd3nvASilnGTqvxveyZSdUIKxEAIAOedLmfruhk9lyl44K1N2wrcytVzoWmvjjz0lU8uFB+gCGlubd8ImAAAAAElFTkSuQmCC') 0 0, auto;
+        }
+        *:active {
+            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAAXNSR0IArs4c6QAAAHVJREFUOI291DEKwCAMheHfIijo+TyIm4MX9TJ2ylIsaEn6piAavmTQzTknCrk0mgB4KUopRw9jjAD03o1Eu8k5A9BakyNnI5KZXy96v5RI/ttRSgmAWutSYieSHUhCCFsSO9FXiZ3oq0Rd5MYYz//oSCJRE90YlBM0yahriAAAAABJRU5ErkJggg==') 0 0, auto;
+        }
+        html {
+            &[lang="en"] *{
+                font-family: "Press Start 2P", system-ui;
+                font-weight: 400;
+                font-style: normal;
+            }
+            &[lang="ko"] *{
+                font-family: "NeoDonggeunmo", system-ui;
+                font-weight: normal;
+                font-display: swap;
+            }
+        }
+        body {
+            background: black;
+            margin: 0;
+            padding: 20px;
+            color:white;
+        }
+
+        /* Menu function */
+        #step1,
+        #step2,
+        #step3,
+        #step4,
+        #step5,
+        #step6{
+            display:none;
+        }
+        body:has(#menu-setup:checked)    #step1,
+        body:has(#menu-langs:checked)    #step2,
+        body:has(#menu-essmod:checked)   #step3,
+        body:has(#menu-recmod:checked)   #step4,
+        body:has(#menu-addmod:checked)   #step5,
+        body:has(#menu-settings:checked) #step6{
+            display:block;
+        }
+
+        /* navigator style */
+        .optionButtons{
+            ul{
+                list-style-type: none;
+                padding: 0;
+                margin: 10px 0;
+            }
+
+            ul li{
+                padding: 10px 0;
+            }
+            
+            label:has(input:checked),
+            label:active{
+                color:yellow
+            }
+
+            input{
+                display: none;
+            }
+
+            &.optionButtonsArticle li{
+                display: inline-block;
+                font-size: small;
+            }
+        }
+
+        /* STYLES */
+        body{
+            display: flex;
+            word-break: keep-all;
+        }
+        nav, article{
+            margin:0;
+            padding:0;
+            border:0;
+        }
+        nav{
+            label{
+                font-size:medium;
+            }
+            min-width:170px;
+            width:25%;
+            flex-shrink: 0;
+        }
+        article{
+            flex:1 1 0;
+            min-width:0;
+            min-height: 70vh;
+        }
+        .ingamestyledownarrow{
+            width:100%;
+            height:16px;
+            background-image:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAAAQCAYAAAC1MDndAAAAAXNSR0IArs4c6QAAAI9JREFUWIXd18kNwDAIAMGl/6LJJ5Esy/chAtsAaHghqqoYJiJiOb+XAFgh/R2HD4gM6dbe6R084JACcRnJIw45EJeQvOJQAuIwkmccakAcQvKOQwuITaQIOPSAWESKgsMIEJNIkXAYBWIQKRoOM0B0kCLiMAtEBSkqDitANH63aDisAlFAioiznb5Z73GzB/huZQi8SycSAAAAAElFTkSuQmCC');
+            background-repeat:space;
+            animation-timing-function: ease-in-out;
+            animation-duration: 5s;
+            animation-iteration-count: infinite;
+            animation-name:upanddown;
+        }
+        @keyframes upanddown{
+            0%{
+                transform: translateY(-10px);
+            }
+            50%{
+                transform: translateY(10px);
+            }
+            100%{
+                transform: translateY(-10px);
+            }
+        }
+
+        .ingamestyleborder,
+        button{
+            /* https://css-tricks.com/revisiting-css-border-image/#article-scroll */
+            &.thick{
+                border-image-source:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAAXNSR0IArs4c6QAAAGRJREFUGJWlkN0JgDAMhO/Ex3aMdv95LmN0gPhkSVVsxQ8C+SMXjgDg7o4JJMmVxZP92jCznpdSxqEHJHlKqYekOPbhjZzzTbq11vNt9d9/y1Hyqf5k3RatesPMQACQNL1ea+UBNfdHRQWzL2cAAAAASUVORK5CYII=');
+                border-image-slice: 5 fill;
+                border-image-width: 10px;
+                padding:15px;
+            }
+            &.thin{
+                border-image-source:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAAXNSR0IArs4c6QAAAFlJREFUGJWVjsENwDAMAqHveIxk/3nIGB6Afpo0UpNHT/LDAgEEANvGAZLkaui9T7HW+jr9IMmllHmShuSZFBGfqswEAFynLSv/TCN6+68Dd0gyh/FU1VrjDZXJWSYsMh19AAAAAElFTkSuQmCC');
+                border-image-slice: 4 fill;
+                border-image-width: 8px;
+                padding:5px;
+            }
+            button:active{
+                color:yellow;
+            }
+            border-image-repeat: space round;
+            border-style: solid;
+            background-color: black;
+            color:white;
+            margin:2px;
+            image-rendering: pixelated;
+        }
+        .hidden{
+            display: none;
+        }
+
+        h1{
+            margin: 0 10px 0 0;
+        }
+
+        /* temporary loading circle by cssloaders.github.io */
+        loading{
+            display:block;
+            position: fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background-color:rgba(255,255,255,0.5);
+
+            .loader {
+                position: absolute;
+                top: calc(50% - 24 * var(--size));
+                left: calc(50% - 24 * var(--size));
+
+                --color-1: #fff;
+                --color-2: gold;
+                --size: 1px;
+
+                width: calc(48 * var(--size));
+                height: calc(48 * var(--size));
+                border: calc(5 * var(--size)) solid var(--color-1);
+                border-bottom-color: var(--color-2);
+                border-radius: 50%;
+                display: inline-block;
+                box-sizing: border-box;
+                animation: rotation 1s linear infinite;
+            }
+        }
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script>
+        /* loading */
+        function loadingOn(){
+            document.getElementsByTagName('loading')[0].style.display='';
+        }
+        function loadingOff(){ //only mom can stop this
+            document.getElementsByTagName('loading')[0].style.display='none';
+        }
+
+        /* Call mom */
+        function call(message){
+            loadingOn();
+            window.chrome.webview.postMessage(message);
+        }
+
+        /* hide all in articles */
+        function hideAllInStep(no){
+            let trg=document.querySelectorAll('#step'+no+' div:not(.showAlways)');
+            for(let i=0;i<trg.length;i++){
+                trg[i].style.display='none';
+            }
+        }
+        function showAllInStep(no){
+            let trg=document.querySelectorAll('#step'+no+' div:not(.showAlways)');
+            for(let i=0;i<trg.length;i++){
+                trg[i].style.display='';
+            }
+        }
+        function show(id){
+            document.getElementById(id).style.display='';
+        }
+
+    </script>
+</head>
+<body>
+    <!-- Specimen
+    <h1>CasEasy!</h1>
+    <button onclick="sendMessage()">Send to C#</button>
+
+    <script>
+        function sendMessage() {
+            window.chrome.webview.postMessage("Hello C# from HTML!");
+        }
+    </script>
+    -->
+
+    <loading style="display: none;" onclick="loadingOff()"><div class="loader"></div></loading>
+    <nav>
+        <button onclick="call('hello');">loadingOn()</button>
+        <button onclick="showAllInStep(1);">showAllInStep(1)</button>
+        <div class="optionButtons">
+            <ul>
+                <li><label class="ingamestyleborder thin" for="menu-setup"><input type="radio" name="menu" id="menu-setup"checked>게임 설치</label></li>
+                <li><label class="ingamestyleborder thin" for="menu-langs"><input type="radio" name="menu" id="menu-langs">언어 패치 가져오기</label></li>
+                <li><label class="ingamestyleborder thin" for="menu-essmod"><input type="radio" name="menu" id="menu-essmod">필수 모드 설치</label></li>
+                <li><label class="ingamestyleborder thin" for="menu-recmod"><input type="radio" name="menu" id="menu-recmod">권장 모드 설치</label></li>
+                <li><label class="ingamestyleborder thin" for="menu-addmod"><input type="radio" name="menu" id="menu-addmod">추가 모드 설치</label></li>
+                <li><label class="ingamestyleborder thin" for="menu-settings"><input type="radio" name="menu" id="menu-settings">설정</label></li>
+            </ul>
+        </div>
+        <div id="alert">
+            <!-- <b id="alert-notadmin">관리자 권한이 부여되지 않았습니다.<button class="ingamestyleborder thin">권한 요청하기</button></b> -->
+            <!-- <b id="alert-updatepend">CasUEasy의 업데이트가 있습니다.<button class="ingamestyleborder thin">업데이트하기</button></b> -->
+        </div>
+        <div id="versions">
+            <b>CUEZ 버전 : <br><a id="cuezVersion" style="padding-left:1em;"></a></b>
+            <br>
+            <b>캐언 버전 : <br><a id="casuVersion" style="padding-left:1em;"></a></b>
+        </div>
+    </nav>
+    <article class="ingamestyleborder thick" id="step1">
+        <script>
+
+        </script>
+        <h1>Setup CasUnk</h1>
+        <!--Game detection : C:\Program Files (x86)\Steam\steamapps\appmanifest_4576510.acf (demo)-->
+        <!--                 C:\Program Files (x86)\Steam\steamapps\appmanifest_4576490.acf (release)-->
+        <!--                 C:\Program Files (x86)\Steam\steamapps\appmanifest_4584420.acf (playtest)-->
+        <div id="step1notfound" style="display: none;">
+            <p>게임이 설치되지 않았거나 스팀이 기본값으로 설정되지 않은 위치에 있습니다.</p>
+            <p>
+                <button class="ingamestyleborder thin" onclick="call('step1OpenDemoLink')">데모 설치하기</button>
+                <button class="ingamestyleborder thin" onclick="call('step1OpenReleaseLink')">정식버전 설치하기</button>
+                <br>
+                <div class="ingamestyledownarrow showAlways"></div>
+                <br>
+                <button class="ingamestyleborder thin" onclick="call('reloadSTEP1')">설치 후 새로고침</button>
+            </p>
+            <!--Open store : steam://store/4576510/
+                Run games : steam://run/4576510/
+            -->
+            <p>혹은, <button class="ingamestyleborder thin">게임 설치위치 수동 입력하기</button></p>
+        </div>
+        <div id="step1selectone" class="optionButtons optionButtonsArticle" style="display: none;">
+            <p>게임이 확인되었습니다.</p>
+            <ul>
+                <li id="step1selectonerelease" style="display:none;" onclick="call('step1ApplyRelease')"><label class="ingamestyleborder thin" for="game-found-demo"><input type="radio" name="game-found" id="game-found-demo">정식판 사용</label></li>
+                <li id="step1selectonedemo" style="display:none;" onclick="call('step1ApplyDemo')"><label class="ingamestyleborder thin" for="game-found-release"><input type="radio" name="game-found" id="game-found-release">데모판 사용</label></li>
+                <li id="step1selectonebeta" style="display:none;" onclick="call('step1ApplyBeta')"><label class="ingamestyleborder thin" for="game-found-playtest"><input type="radio" name="game-found" id="game-found-playtest">테스트판 사용</label></li>
+                <li id="step1selectonemanual" style="display:none;" onclick="call('step1ApplyManual')"><label class="ingamestyleborder thin" for="game-found-manual"><input type="radio" name="game-found" id="game-found-manual">수동 위치 사용</label></li>
+            </ul>
+        </div>
+        <div id="step1forcemanual" style="display: none;"><button class="ingamestyleborder thin" onclick="call('step1OpenExeManual')">게임 설치 위치 수동 입력하기</button></div>
+        <div id="step1openlocation" style="display: none;"><button class="ingamestyleborder thin" onclick="call('step1OpenCasuLocation')">사용중인 게임 설치 위치 열기</button></div>
+        <div id="step1showlinks" style="display: none;">
+            <hr>
+            <button class="ingamestyleborder thin" onclick="call('step1OpenDemoLink')">스팀 데모판 링크</button>
+            <button class="ingamestyleborder thin" onclick="call('step1OpenReleaseLink')">스팀 정식판 링크</button>
+        </div>
+    </article>
+
+    <article class="ingamestyleborder thick" id="step2">
+        <h1>언어팩 설치하기</h1>
+        <p>en(English)와 zh-CN(简体中文)은 게임에 포함되어 있습니다.</p>
+    <!-- <input type="text" placeholder="검색"> -->
+        <table id="step2installedlang">
+            <tr>
+                <td colspan="2">한국어</td>
+                <td>v7.0.1</td>
+                <td>v7.0.1	</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+        <li>ko-KR<button>다운로드하기</button><button>Update<br>00.00 260000->00.00 260000</button></li>
+            <p>설치되지 않음</p>
+        <table id="step2installedyetlang">
+        </table>
+    </article>
+
+    <article class="ingamestyleborder thick" id="step3">
+        <h1>필수 모드 설치하기</h1>
+        <h3>BepInEx : 모든 모드의 기본이 됩니다.</h3>
+        <div class="step3-bepinex-notfound">
+            <p>BepInEx가 발견되지 않았습니다.</p>
+            <button>BepInEx 설치하기</button>
+        </div>
+        <!--after downloading-->
+        <div class="step3-bepinex-runneeded">
+            <p>BepInEx는 설치되었으나, 게임을 한 번 켰다 꺼야 합니다.</p>
+            <button>게임 실행하기</button>
+        </div>
+        <div class="step3-bepinex-ok">
+            <p>BepInEx가 확인되었습니다.</p>
+        </div>
+    </article>
+
+    <article class="ingamestyleborder thick" id="step4">
+        <h1>권장 모드 설치하기</h1>
+        <h3>XTMPi : 가독성 패치를 위한 모드입니다.</h3>
+        <div class="step4-XTMPi-notfound">
+            <p>XTMPi가 발견되지 않았습니다.</p>
+            <button>XTMPi 설치하기</button>
+        </div>
+        <div class="step4-XTMPi-ok">
+            <p>XTMPi가 확인되었습니다.</p>
+        </div>
+        <div class="step4-XTMPi-updatepend">
+            <p>XTMPi의 업데이트가 있습니다.</p>
+            <button>XTMPi 업데이트하기<br>00.00 260000->00.00 260000</button>
+        </div>
+        <p>credit <ul><li>[Original code by kawalain]</li><li>[Fork Archive by Kedr]</li><li>[image extension patch by Enine]</li></ul></p>
+
+        <hr>
+
+        <h3>Glyph Patch : 키릴 문자 등의 가독성 패치입니다.</h3>
+        <div class="step4-XTMPi-notfound">
+            <p>XTMPi가 발견되지 않았습니다.</p>
+            <button>XTMPi 설치하기</button>
+        </div>
+        <div class="step4-XTMPi-ok">
+            <p>XTMPi가 확인되었습니다.</p>
+        </div>
+        <div class="step4-XTMPi-updatepend">
+            <p>XTMPi의 업데이트가 있습니다.</p>
+            <button>XTMPi 업데이트하기<br>00.00 260000->00.00 260000</button>
+            <button>XTMPi 릴리즈 노트 확인</button>
+        </div>
+        <div class="step4-GlyphPatch-notfound">
+            <p>Glyph Patch가 발견되지 않았습니다.</p>
+            <button>Glyph Patch 설치하기</button>
+        </div>
+        <div class="step4-GlyphPatch-ok">
+            <p>Glyph Patch가 확인되었습니다.</p>
+        </div>
+        <div class="step4-GlyphPatch-updatepend">
+            <p>Glyph Patch의 업데이트가 있습니다.</p>
+            <button>Glyph Patch 업데이트하기<br>00.00 260000->00.00 260000</button>
+            <button>Glyph Patch 릴리즈 노트 확인</button>
+        </div>
+        <p>credit <ul><li></li></ul></p>
+
+        <hr>
+        <h3>MP : 멀티플레이어 패치입니다.</h3>
+        <div class="step4-MP-notfound">
+            <p>MP가 발견되지 않았습니다.</p>
+            <button>MP 설치하기</button>
+        </div>
+        <div class="step4-MP-ok">
+            <p>MP가 확인되었습니다.</p>
+        </div>
+        <div class="step4-MP-updatepend">
+            <p>MP의 업데이트가 있습니다.</p>
+            <button>MP 업데이트하기<br>00.00 260000->00.00 260000</button>
+            <button>MP 릴리즈 노트 확인</button>
+        </div>
+
+        <hr>
+        <h3>UE : 위키 작성과 게임 분석의 기초</h3>
+        <div class="step4-UE-notfound">
+            <p>Unity Explorer가 발견되지 않았습니다.</p>
+            <button>UE 설치하기</button>
+        </div>
+        <div class="step4-UE-ok">
+            <p>UE가 확인되었습니다.</p>
+        </div>
+        <div class="step4-UE-updatepend">
+            <p>UE의 업데이트가 있습니다.</p>
+            <button>UE 업데이트하기<br>00.00 260000->00.00 260000</button>
+            <button>UE 릴리즈 노트 확인</button>
+        </div>
+    </article>
+
+    <article class="ingamestyleborder thick" id="step5">
+        <h1>추가 모드 설치하기</h1>
+        <h3>dll 파일이나 zip 파일을 끌어놓을 수 있습니다.</h3>
+        <table>
+            <th>
+                <td>모드 이름</td>
+                <td>버전</td>
+                <td>설치일</td>
+            </th>
+        </table>
+    </article>
+</body>
+</html>
