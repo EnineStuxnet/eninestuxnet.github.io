@@ -280,7 +280,7 @@
         <!--Game detection : C:\Program Files (x86)\Steam\steamapps\appmanifest_4576510.acf (demo)-->
         <!--                 C:\Program Files (x86)\Steam\steamapps\appmanifest_4576490.acf (release)-->
         <!--                 C:\Program Files (x86)\Steam\steamapps\appmanifest_4584420.acf (playtest)-->
-        <div id="step1notfound" style="display: none;">
+        <div id="step1notfound" style="">
             <p>게임이 설치되지 않았거나 스팀이 기본값으로 설정되지 않은 위치에 있습니다.</p>
             <p>
                 <button class="ingamestyleborder thin" onclick="call('step1OpenDemoLink')">데모 설치하기</button>
@@ -295,7 +295,7 @@
             -->
             <p>혹은, <button class="ingamestyleborder thin">게임 설치위치 수동 입력하기</button></p>
         </div>
-        <div id="step1selectone" class="optionButtons optionButtonsArticle" style="display: none;">
+        <div id="step1selectone" class="optionButtons optionButtonsArticle" style="">
             <p>게임이 확인되었습니다.</p>
             <ul>
                 <li id="step1selectonerelease" onclick="call('step1ApplyRelease')"><label class="ingamestyleborder thin" for="game-found-demo"><input type="radio" name="game-found" id="game-found-demo">정식판 사용</label></li>
@@ -304,9 +304,9 @@
                 <li id="step1selectonemanual" onclick="call('step1ApplyManual')"><label class="ingamestyleborder thin" for="game-found-manual"><input type="radio" name="game-found" id="game-found-manual">수동 위치 사용</label></li>
             </ul>
         </div>
-        <div id="step1forcemanual" style="display: none;"><button class="ingamestyleborder thin" onclick="call('step1OpenExeManual')">게임 설치 위치 수동 입력하기</button></div>
-        <div id="step1openlocation" style="display: none;"><button class="ingamestyleborder thin" onclick="call('step1OpenCasuLocation')">사용중인 게임 설치 위치 열기</button></div>
-        <div id="step1showlinks" style="display: none;">
+        <div id="step1forcemanual" style=""><button class="ingamestyleborder thin" onclick="call('step1OpenExeManual')">게임 설치 위치 수동 입력하기</button></div>
+        <div id="step1openlocation" style=""><button class="ingamestyleborder thin" onclick="call('step1OpenCasuLocation')">사용중인 게임 설치 위치 열기</button></div>
+        <div id="step1showlinks" style="">
             <hr>
             <button class="ingamestyleborder thin" onclick="call('step1OpenDemoLink')">스팀 데모판 링크</button>
             <button class="ingamestyleborder thin" onclick="call('step1OpenReleaseLink')">스팀 정식판 링크</button>
